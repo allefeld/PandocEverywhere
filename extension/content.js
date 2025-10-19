@@ -6,7 +6,7 @@ console.log("[PE] Pandoc Everywhere")
 // helper function
 const attached = new WeakSet();
 function attachKeyListener(doc) {
-  if (! doc) return;
+  if (!doc) return;
   console.log("[PE] Found document");
   if (attached.has(doc)) {
     console.log("[PE] Handler already attached");
@@ -87,9 +87,12 @@ function formatShortcut(e) {
 // ––– external editor ––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
 function editExternal(editor, format) {
-  console.log("[PE] editExternal");
   editor.contentEditable = "false";
   editor.classList.add("pe-editing");
+  if (!editor.dataset.peId) {
+    editor.dataset.peId = Math.random().toString(36).slice(2);
+  }
+  console.log("[PE] Editing " + editor.dataset.peId);
   return fetch('http://localhost:5000/', {
     method: "POST",
     headers: {
@@ -99,7 +102,8 @@ function editExternal(editor, format) {
     body: JSON.stringify({
       "text": editor.innerHTML,
       "format": format,
-      "url": window.location.href
+      "url": window.location.href,
+      "id": editor.dataset.peId
     })
   }).then((response) => {
     if (!response.ok) {
