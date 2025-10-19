@@ -1,0 +1,12 @@
+[contenteditable=true]::before {
+  content: "⬤";
+  font-size: 50%;
+  color: orange;
+  display: block;
+  float: right;
+}
+
+.pe-editing {
+  opacity: 50% !important;
+  background-color: lightgray !important;
+}

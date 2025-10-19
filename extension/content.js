@@ -14,24 +14,6 @@ function attachKeyListener(doc) {
     attached.add(doc);
     console.log("[PE] Attaching handler");
     doc.addEventListener("keydown", handleKey, true);
-
-    const style = document.createElement("style");
-    const iconurl = chrome.runtime.getURL("icons/icon.svg");
-    style.textContent = `
-      [contenteditable=true]::before {
-        content: "";
-        display: block;
-        float: right;
-        width: 0.75em;
-        height: 0.75em;
-        background-image: url(${iconurl});
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: contain;
-      }
-    `;
-
-    doc.head.appendChild(style);
   }
 }
 
@@ -107,9 +89,7 @@ function formatShortcut(e) {
 function editExternal(editor, format) {
   console.log("[PE] editExternal");
   editor.contentEditable = "false";
-  const origstyle = editor.style;
-  editor.style['opacity'] = '50%';
-  editor.style['background-color'] = 'lightgray';
+  editor.classList.add("pe-editing");
   return fetch('http://localhost:5000/', {
     method: "POST",
     headers: {
@@ -126,7 +106,7 @@ function editExternal(editor, format) {
       return response.json().then(err => {
         alert("PandocEverywhere server error.\n" + err.error);
         editor.contentEditable = "true";
-        editor.style = origstyle
+        editor.classList.remove("pe-editing");
         return Promise.reject(); // stop further then-chaining
       });
     }
@@ -134,13 +114,13 @@ function editExternal(editor, format) {
   }).then((text) => {
     editor.innerHTML = text;
     editor.contentEditable = "true";
-    editor.style = origstyle
+    editor.classList.remove("pe-editing");
   }).catch((error) => {  // fetch fails
     alert(
       "Cannot reach PandocEverywhere server.\n" +
       (error.message || error.toString())
     );
     editor.contentEditable = "true";
-    editor.style = origstyle
+    editor.classList.remove("pe-editing");
   });
 }

@@ -15,12 +15,18 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"]
+    },
+    {
+      "matches": ["<all_urls>"],
+      "css": ["styles.css"],
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "web_accessible_resources": [
     {
       "matches": ["<all_urls>"],
-      "resources": ["icons/icon.svg"]
+      "resources": ["icons/icon.svg", "styles.css"]
     }
   ]
 }
