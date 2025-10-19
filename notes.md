@@ -1,6 +1,6 @@
 # TODO
 
--   tidy HTML
+-   tidy HTML?
 -   does difference between Pandoc'ed (html+raw_html) and raw HTML make sense?
     maybe just Markdown vs tidied HTML → tidying becomes conversion.
 
@@ -31,15 +31,11 @@
 
 # Info
 
-Pandoc Server: <https://pandoc.org/pandoc-server.html>
-
 In Brave, filtering of localhost needs to be explicitly disabled:
 ```
 @@||localhost^
 @@||127.0.0.1^
 ```
-
-
 
 # Test
 
@@ -49,13 +45,8 @@ With Moodle: <https://moodle4.city.ac.uk/blocks/quickmail/compose.php?courseid=1
 
 With TinyMCE Demo: <https://www.tiny.cloud/docs/tinymce/latest/full-featured-premium-demo/>
 
-With curl:
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"text": "Hi", "format": "markdown", "url": "nowhere"}' -D - http://localhost:5000/
-```
 
-
-# HTML Content
+# Recommended HTML Content
 
 https://www.reddit.com/answers/196c9712-4e85-4fac-bc2d-b583143cb644/
 https://premailer.dialect.ca/
