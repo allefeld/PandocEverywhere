@@ -4,7 +4,8 @@ from flask import Flask, request, make_response, jsonify
 import re
 import os
 import subprocess
-import shutil
+import tempfile
+from urllib.parse import urlparse
 
 
 __app_name__ = "PandocEverywhere"
@@ -20,15 +21,7 @@ edit_ext = {
 
 pandoc = "/opt/quarto/bin/tools/pandoc"
 code = "/usr/bin/code"
-
-
-# determine app directory
-app_dir = os.path.join(
-    os.environ.get(
-        "XDG_DATA_HOME",
-        os.path.expanduser("~/.local/share")
-    ),
-    __app_name__)
+app_dir = os.path.join(tempfile.gettempdir(), __app_name__ + "-" + __version__)
 
 app = Flask(__name__)
 
@@ -55,76 +48,70 @@ def handle_post():
     try:
         # process request
         data = request.get_json()
-        text = data.get("text", "")
-        format = data.get("format", "markdown")
-        url = data.get("url", "unknown")
+        text = data.get("text")
+        format = data.get("format")
+        url = data.get("url", "")
+        id = data.get("id", "")
 
-        # remember raw blocks
-        raw_blocks = re.findall(
-            r'<!-- start raw html -->(.*?)<!-- stop raw html -->',
-            text,
-            flags=re.DOTALL,
-        )
-        print(raw_blocks)
+        # create name for edited file
+        up = urlparse(url)
+        fn = re.sub(r'[/:?*]+', '-', up.netloc + up.path + "_" + id)
+        fn = os.path.join(app_dir, fn + "." + edit_ext.get(format, format))
+        # make sure app_dir exists
+        os.makedirs(app_dir, exist_ok=True)
 
-        # create directory and save input
-        rq_dir = os.path.join(
-            app_dir,
-            re.sub(r"[:/?*]", "_", url)
-        )
-        os.makedirs(rq_dir, exist_ok=True)
-        orig = os.path.join(rq_dir, "orig.html")
-        with open(orig, "w", encoding="utf-8") as f:
-            f.write(text)
+        # patched = re.sub(r'\s+data-mce-[^\s=]+="[^"]*"', "", text)
 
-        # convert
-        current = os.path.join(
-            rq_dir, "current." + edit_ext.get(format, format)
-        )
+        # convert text to format
         if format != "raw":
-            subprocess.run([
-                pandoc,
-                orig,
-                "-f", "html+raw_html",
-                "-t", format,
-                "-o", current
-            ], check=True)
+            cp = subprocess.run(
+                [pandoc, "-f", "html+raw_html", "-t", format],
+                text=True,
+                input=text,
+                capture_output=True,
+                check=True)
+            text_c = cp.stdout
         else:
-            # no conversion for raw
-            shutil.copyfile(orig, current)
+            # no conversion for "raw"
+            text_c = text
 
-        # edit
-        mtime_before = os.path.getmtime(current)
-        # make sure workspace is open
+        # write converted text to file
+        with open(fn, "w") as f:
+            f.write(text_c)
+
+        # edit file
+        mtime_before = os.path.getmtime(fn)
         subprocess.run([
             code,
-            rq_dir
-        ], check=True)
-        # edit in workspace
-        subprocess.run([
-            code,
-            "-r",
+            "-n",
             "-w",
-            current
+            fn
         ], check=True)
-        edited = os.path.getmtime(current) != mtime_before
+        edited = os.path.getmtime(fn) != mtime_before
 
-        # convert back
-        if edited:
-            new = os.path.join(rq_dir, "new.html")
-            if format != "raw":
-                subprocess.run([
-                    pandoc,
-                    current,
-                    "-f", format,
-                    "-t", "html",
-                    "-o", new
-                ], check=True)
-            else:
-                # no conversion for raw
-                shutil.copyfile(current, new)
-            with open(new, "r", encoding="utf-8") as f:
-                text = f.read()
+        if not edited:
+            # return original text
+            return text
+
+        # read converted & edited text from file
+        with open(fn, "r") as f:
+            text_ce = f.read()
+
+        # back-convert converted & edited text
+        if format != "raw":
+            cp = subprocess.run(
+                [pandoc, "-t", "html+raw_html", "-f", format],
+                text=True,
+                input=text_ce,
+                capture_output=True,
+                check=True)
+            text_ceb = cp.stdout
+        else:
+            # no conversion for "raw"
+            text_ceb = text_ce
+
+        # return back-converted text
+        return text_ceb
     except Exception as exception:
         lineno = exception.__traceback__.tb_lineno
         msg = f"{repr(exception)} at line {lineno}"
@@ -132,8 +119,6 @@ def handle_post():
         response = jsonify({"error": msg})
         response.status_code = 500
         return response
-    # return
-    return text
 
 
 if __name__ == "__main__":

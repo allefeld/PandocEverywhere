@@ -1,11 +1,9 @@
 # TODO
 
--   tidy HTML?
--   does difference between Pandoc'ed (html+raw_html) and raw HTML make sense?
-    maybe just Markdown vs tidied HTML → tidying becomes conversion.
+-   fix convert to work with de-newlined HTML
+    info: pandoc does not touch anything within `<script>` at all
 
--   delete / backup previous files
-    function to restore previous version
+-   remove data-mce-* attributes
 
 -   styling via inlining?
     configure style per host?
@@ -20,14 +18,6 @@
     ```
     also useful for following
 
--   implement in python
-    ```js
-    const html = editor.innerHTML
-      .replace(/\s+data-mce-[^\s=]+="[^"]*"/g, "")
-      .replace(/<!-- start raw html -->/g, "<script>")
-      .replace(/<!-- stop raw html -->/g, "</script>");
-    ```
-
 
 # Info
 
@@ -36,6 +26,9 @@ In Brave, filtering of localhost needs to be explicitly disabled:
 @@||localhost^
 @@||127.0.0.1^
 ```
+
+In VS Code, trust the containing folder once.
+
 
 # Test
 
