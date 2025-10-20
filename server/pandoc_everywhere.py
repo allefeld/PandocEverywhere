@@ -64,13 +64,7 @@ def handle_post():
 
         # convert text to format
         if format != "raw":
-            cp = subprocess.run(
-                [pandoc, "-f", "html+raw_html", "-t", format],
-                text=True,
-                input=text,
-                capture_output=True,
-                check=True)
-            text_c = cp.stdout
+            text_c = convert(text, "html+raw_html", format)
         else:
             # no conversion for "raw"
             text_c = text
@@ -99,13 +93,7 @@ def handle_post():
 
         # back-convert converted & edited text
         if format != "raw":
-            cp = subprocess.run(
-                [pandoc, "-t", "html+raw_html", "-f", format],
-                text=True,
-                input=text_ce,
-                capture_output=True,
-                check=True)
-            text_ceb = cp.stdout
+            text_ceb = convert(text_ce, format, "html+raw_html")
         else:
             # no conversion for "raw"
             text_ceb = text_ce
@@ -119,6 +107,32 @@ def handle_post():
         response = jsonify({"error": msg})
         response.status_code = 500
         return response
+
+# use Pandoc to convert between formats, preserving marked HTML as-is
+def convert(input, format_from, format_to):
+    input = input.replace(
+        "<!-- start raw html -->",
+        "<script><!-- start raw html -->"
+    ).replace(
+        "<!-- stop raw html -->",
+        "<!-- stop raw html --></script>"
+    )
+    cp = subprocess.run(
+        [pandoc, "-f", format_from, "-t", format_to],
+        text=True,
+        input=input,
+        capture_output=True,
+        check=True)
+    output = cp.stdout
+    output = output.replace(
+        "<script><!-- start raw html -->",
+        "<!-- start raw html -->"
+    ).replace(
+        "<!-- stop raw html --></script>",
+        "<!-- stop raw html -->"
+    )
+
+    return output
 
 
 if __name__ == "__main__":
