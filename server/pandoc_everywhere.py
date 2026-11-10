@@ -64,7 +64,12 @@ def handle_post():
 
         # convert text to format
         if format != "raw":
-            text_c = convert(text, "html+raw_html", format)
+            if format.startswith("markdown"):
+                # do not translate "–" to "--""
+                print("unsmart:", format + "-smart")
+                text_c = convert(text, "html+raw_html", format + "-smart")
+            else:
+                text_c = convert(text, "html+raw_html", format)
         else:
             # no conversion for "raw"
             text_c = text
@@ -110,6 +115,9 @@ def handle_post():
 
 # use Pandoc to convert between formats, preserving marked HTML as-is
 def convert(input, format_from, format_to):
+    # input = re.sub(r'<!-- start raw html -->', r'<script><!-- start raw html -->', input)
+    # input = re.sub(r'<!-- stop raw html -->', r'<!-- stop raw html --></script>', input)
+
     input = input.replace(
         "<!-- start raw html -->",
         "<script><!-- start raw html -->"
@@ -135,5 +143,17 @@ def convert(input, format_from, format_to):
     return output
 
 
+def main():
+    """Production entry point (`pandoc-everywhere` command), served by waitress.
+
+    Listens on localhost only (IPv4 and IPv6, whatever "localhost" resolves to):
+    the browser extension talks to http://localhost:5000/, and nothing else
+    should be able to trigger Pandoc runs or open editor windows.
+    """
+    from waitress import serve
+    serve(app, listen="localhost:5000")
+
+
 if __name__ == "__main__":
+    # development server with debug mode
     app.run(debug=True, port=5000)

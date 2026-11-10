@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pandoc-everywhere"
+version = "1.1.0"
+description = "Backend for the PandocEverywhere browser extension: edit web text fields in VS Code via Pandoc"
+requires-python = ">=3.9"
+dependencies = [
+    "flask",
+    "waitress",
+]
+
+[project.scripts]
+pandoc-everywhere = "pandoc_everywhere:main"
+
+[tool.setuptools]
+py-modules = ["pandoc_everywhere"]
