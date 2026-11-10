@@ -14,13 +14,13 @@ A browser extension that enhances web-based text editors with powerful document 
 PandocEverywhere uses a client-server architecture:
 
 - **Browser Extension** (content script) - Monitors and enhances contenteditable elements
-- **Flask Backend** (port 5000) - Orchestrates VS Code editing workflow with Pandoc conversions
+- **Flask Backend** (`localhost:5000`) - Orchestrates VS Code editing workflow with Pandoc conversions
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.x with Flask
+- Python 3.9 or later and [pipx](https://pipx.pypa.io/)
 - Pandoc (tested with Quarto's bundled Pandoc at `/opt/quarto/bin/tools/pandoc`)
 - VS Code (at `/usr/bin/code`)
 
@@ -32,12 +32,32 @@ PandocEverywhere uses a client-server architecture:
 
 ### Backend Server
 
+Install the server as a Python package with pipx, which pulls in Flask and the [Waitress](https://docs.pylonsproject.org/projects/waitress/) server:
+
 ```bash
-cd server
-python pandoc_everywhere.py
+pipx install ./server
 ```
 
-The Flask server will run on `http://localhost:5000`
+Use `pipx install -e ./server` instead for an editable install, where changes to the source take effect after restarting the server.
+
+Then run it:
+
+```bash
+pandoc-everywhere
+```
+
+The server listens on `http://localhost:5000`, and only accepts connections from the same computer.
+
+To start it automatically at login, run it as a systemd user service, e.g. from a startup script:
+
+```bash
+systemd-run --user --collect --unit=pandoc-everywhere -p Restart=on-failure \
+  -E PYTHONUNBUFFERED=1 ~/.local/bin/pandoc-everywhere
+```
+
+Its output is then available via `journalctl --user -u pandoc-everywhere`.
+
+For development, `python server/pandoc_everywhere.py` runs it with Flask's development server in debug mode instead.
 
 ## Usage
 
@@ -66,7 +86,8 @@ PandocEverywhere/
 │   ├── manifest.json        # Extension manifest
 │   └── icons/              # Extension icons
 ├── server/
-│   └── pandoc_everywhere.py # Flask backend server
+│   ├── pandoc_everywhere.py # Flask backend server
+│   └── pyproject.toml       # Python package definition
 └── notes.md                 # Development notes
 ```
 
@@ -75,7 +96,7 @@ PandocEverywhere/
 - **Version**: 1.1.0
 - **Manifest Version**: 3
 - **Languages**: JavaScript (extension), Python (backend)
-- **Data Storage**: `~/.local/share/PandocEverywhere/` (XDG compliant)
+- **Data Storage**: edited files are kept in the system temporary directory, in `PandocEverywhere-<version>/`
 
 ## Tested Platforms
 
@@ -83,10 +104,10 @@ PandocEverywhere/
 - Moodle
 - TinyMCE editors
 
-## License
-
-TBD
-
 ## Contributing
 
 This project is in active development. See `notes.md` for current TODOs and planned features.
+
+***
+
+Copyright © 2025–2026 Carsten Allefeld. Portions of this software were generated with AI assistance (Claude Code, GitHub Copilot) and may not be subject to copyright. To the extent copyright subsists, this software is released under the terms of the GNU General Public License, version 3 or later.
